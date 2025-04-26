@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/project-banner.png" alt="Project Banner">
+  <img src="[images/project-banner.png](https://www.canva.com/design/DAGUHudEqJY/5rpjTOa3mdW5XCM3-3pZKA/edit?utm_content=DAGUHudEqJY&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)" alt="Project Banner">
 </p>
 
 # # Hi, I'm Skander 👋
