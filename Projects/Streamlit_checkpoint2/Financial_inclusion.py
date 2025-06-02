@@ -4,8 +4,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-# Load the dataset
-df = pd.read_csv('Financial_inclusion_dataset.csv')
+import os
+
+# Load the dataset with proper path handling
+script_dir = os.path.dirname(os.path.abspath(__file__))
+csv_path = os.path.join(script_dir, 'Financial_inclusion_dataset.csv')
+df = pd.read_csv(csv_path)
 # Ydata profiling
 from ydata_profiling import ProfileReport
 profile = ProfileReport(df, title='Financial Inclusion Dataset Profiling Report', explorative=True)
@@ -104,11 +108,42 @@ st.subheader('Label Encoding for Categorical Variables')
 categorical_columns = df_cleaned.select_dtypes(include=['object']).columns.tolist()
 # Store original categorical columns before encoding
 original_categorical_columns = categorical_columns.copy()
+
+# Store the original data and label encoders for later use
+original_data = df.copy()
+label_encoders = {}
+encoding_mappings = {}
+
 for column in categorical_columns:
     st.write(f'Encoding {column}...')
     le = LabelEncoder()
+    
+    # Store original unique values
+    original_values = df_cleaned[column].unique()
+    
+    # Fit and transform
     df_cleaned[column] = le.fit_transform(df_cleaned[column])
+    
+    # Store the encoder and mapping
+    label_encoders[column] = le
+    encoding_mappings[column] = {
+        original_val: encoded_val 
+        for original_val, encoded_val in zip(original_values, le.transform(original_values))
+    }
+    
     st.write(f'{column} encoded successfully.')
+    
+# Display encoding mappings
+st.subheader('🔍 Encoding Mappings Reference')
+st.write("Here are the mappings between original categorical values and their encoded numbers:")
+
+for column in original_categorical_columns:
+    with st.expander(f"📋 {column} Mappings"):
+        mapping_df = pd.DataFrame([
+            {'Original Value': orig, 'Encoded Value': enc}
+            for orig, enc in encoding_mappings[column].items()
+        ]).sort_values('Encoded Value')
+        st.dataframe(mapping_df, use_container_width=True)
 # Display the cleaned dataset after label encoding
 st.subheader('Cleaned Dataset After Label Encoding')
 # Display basic info about the encoded dataset
@@ -178,41 +213,143 @@ importances = rf_model.feature_importances_
 feature_importance_df = pd.DataFrame({'Feature': features.columns, 'Importance': importances})
 feature_importance_df = feature_importance_df.sort_values(by='Importance', ascending=False)
 st.write(feature_importance_df)
-# --- Streamlit Prediction Form ---
-st.subheader('Make a Prediction')
 
-# Get feature names (excluding target)
-input_features = features.columns.tolist()
+# Add explanation section
+st.subheader('📚 Understanding the Features')
+st.write("""
+This model uses the following features to predict bank account ownership:
 
-# Create input fields dynamically for each feature
-user_input = {}
-for col in input_features:
-    if col in original_categorical_columns:
-        # For originally categorical columns, show unique encoded values
-        options = sorted(df_cleaned[col].unique().tolist())
-        user_input[col] = st.selectbox(f"Select {col} (encoded)", options)
-    else:
-        # For numerical, use number_input
-        min_val = float(df_cleaned[col].min())
-        max_val = float(df_cleaned[col].max())
-        mean_val = float(df_cleaned[col].mean())
-        user_input[col] = st.number_input(f"Enter {col}", min_value=min_val, max_value=max_val, value=mean_val)
+**Demographic Features:**
+- **Age of Respondent**: Age of the person being surveyed
+- **Gender of Respondent**: Male or Female
+- **Education Level**: Highest level of education completed
+- **Marital Status**: Current marital status
 
-# Predict button
-if st.button('Predict'):
+**Geographic Features:**
+- **Country**: Country where the person lives
+- **Location Type**: Rural or Urban location
+
+**Economic Features:**
+- **Job Type**: Type of employment or economic activity
+- **Household Size**: Number of people in the household
+
+**Technology Access:**
+- **Cellphone Access**: Whether the person has access to a cellphone
+
+**Social Features:**
+- **Relationship with Head**: Relationship to the head of household
+
+**Temporal:**
+- **Year**: Year of the survey
+
+Each categorical feature is encoded with numbers where each unique value gets a specific number (see the encoding mappings above).
+""")
+# --- Enhanced Streamlit Prediction Form ---
+st.subheader('🎯 Make a Prediction')
+st.write("Use this form to predict whether someone is likely to have a bank account based on their characteristics.")
+
+# Create two columns for better layout
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    st.write("### Input Features")
+    
+    # Get feature names (excluding target)
+    input_features = features.columns.tolist()
+    
+    # Create input fields dynamically for each feature
+    user_input = {}
+    user_input_display = {}  # Store display values for showing to user
+    
+    for col in input_features:
+        if col in original_categorical_columns:
+            # For originally categorical columns, show original values
+            st.write(f"**{col.replace('_', ' ').title()}:**")
+            
+            # Get unique original values
+            original_values = list(encoding_mappings[col].keys())
+            
+            # Create selectbox with original values
+            selected_original = st.selectbox(
+                f"Choose {col.replace('_', ' ')}",
+                options=original_values,
+                key=f"input_{col}"
+            )
+            
+            # Store both original and encoded values
+            user_input[col] = encoding_mappings[col][selected_original]
+            user_input_display[col] = f"{selected_original} (encoded as {encoding_mappings[col][selected_original]})"
+            
+        else:
+            # For numerical, use number_input
+            min_val = float(df_cleaned[col].min())
+            max_val = float(df_cleaned[col].max())
+            mean_val = float(df_cleaned[col].mean())
+            
+            user_input[col] = st.number_input(
+                f"**{col.replace('_', ' ').title()}**", 
+                min_value=min_val, 
+                max_value=max_val, 
+                value=mean_val,
+                help=f"Range: {min_val:.1f} to {max_val:.1f}"
+            )
+            user_input_display[col] = str(user_input[col])
+
+with col2:
+    st.write("### 📊 Input Summary")
+    
+    # Show what the user has selected
+    for feature, display_value in user_input_display.items():
+        st.write(f"**{feature.replace('_', ' ').title()}:** {display_value}")
+
+# Prediction section
+st.write("---")
+col1, col2, col3 = st.columns([1, 1, 1])
+
+with col2:
+    predict_button = st.button('🔮 Predict Bank Account Ownership', use_container_width=True)
+
+if predict_button:
     # Prepare input for prediction
     input_df = pd.DataFrame([user_input])
     # Ensure columns are in the same order as training
     input_df = input_df[input_features]
+    
     # Predict
     prediction = rf_model.predict(input_df)[0]
     prediction_proba = rf_model.predict_proba(input_df)[0]
     
     # Convert prediction back to meaningful text
     if prediction == 1:
-        result = "Yes (Has Bank Account)"
+        result = "✅ **YES** - Likely to have a bank account"
+        result_color = "success"
     else:
-        result = "No (No Bank Account)"
+        result = "❌ **NO** - Unlikely to have a bank account"
+        result_color = "error"
     
-    st.success(f'Predicted bank account ownership: {result}')
-    st.info(f'Prediction confidence: {max(prediction_proba):.2%}')
+    # Display results with confidence
+    confidence = max(prediction_proba)
+    
+    if result_color == "success":
+        st.success(result)
+    else:
+        st.error(result)
+    
+    # Show confidence with appropriate color coding
+    if confidence >= 0.8:
+        st.info(f'🎯 **Prediction Confidence:** {confidence:.1%} (High confidence)')
+    elif confidence >= 0.6:
+        st.warning(f'🎯 **Prediction Confidence:** {confidence:.1%} (Medium confidence)')
+    else:
+        st.warning(f'🎯 **Prediction Confidence:** {confidence:.1%} (Low confidence - prediction uncertain)')
+    
+    # Show probability breakdown
+    prob_no = prediction_proba[0] * 100
+    prob_yes = prediction_proba[1] * 100
+    
+    st.write("### 📈 Probability Breakdown:")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("No Bank Account", f"{prob_no:.1f}%")
+    with col2:
+        st.metric("Has Bank Account", f"{prob_yes:.1f}%")

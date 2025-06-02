@@ -10,9 +10,14 @@ This Streamlit application provides comprehensive analysis of financial inclusio
   - Duplicate removal
   - Outlier detection and removal using IQR method
   - Label encoding for categorical variables
+- **Encoding Reference**: Interactive mappings showing original categorical values and their encoded numbers
 - **Machine Learning**: Random Forest classifier for predicting bank account ownership
-- **Interactive Predictions**: User-friendly form to make predictions on new data
+- **Enhanced Prediction Interface**: 
+  - User-friendly form with original categorical values (not just encoded numbers)
+  - Real-time input summary
+  - Detailed prediction results with confidence levels
 - **Visualizations**: Box plots, confusion matrix, and feature importance charts
+- **Feature Explanations**: Detailed descriptions of what each feature represents
 
 ## Dataset
 The application uses a financial inclusion dataset containing information about:

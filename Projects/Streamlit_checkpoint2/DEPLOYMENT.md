@@ -40,6 +40,14 @@ Streamlit Share will automatically:
 - Deploy your app to a public URL
 - Update automatically when you push changes to GitHub
 
+## Features
+- **Data Exploration**: Dataset overview with comprehensive profiling
+- **Data Preprocessing**: Missing values, duplicates, outliers, and label encoding
+- **Encoding Mappings**: Clear visualization of how categorical values are encoded
+- **Machine Learning**: Random Forest classifier with evaluation metrics
+- **Interactive Predictions**: User-friendly form with original categorical values
+- **Enhanced UX**: Shows encoding mappings so users understand what each value represents
+
 ## Important Files for Deployment
 - `Financial_inclusion.py` - Main Streamlit application
 - `requirements.txt` - Python dependencies
