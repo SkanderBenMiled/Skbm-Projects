@@ -195,6 +195,15 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 # Train a Random Forest Classifier
 rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
 rf_model.fit(X_train, y_train)
+
+# Save the trained model and preprocessing components
+import joblib
+joblib.dump(rf_model, 'financial_inclusion_model.pkl')
+joblib.dump(label_encoders, 'label_encoders.pkl')
+joblib.dump(encoding_mappings, 'encoding_mappings.pkl')
+joblib.dump(list(features.columns), 'feature_names.pkl')
+
+st.success("✅ Model and preprocessing components saved successfully!")
 # Evaluate the model
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 y_pred = rf_model.predict(X_test)
